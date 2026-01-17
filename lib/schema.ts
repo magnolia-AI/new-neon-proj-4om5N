@@ -1,27 +1,35 @@
-import { pgTable, serial, varchar, text, timestamp, boolean, integer } from 'drizzle-orm/pg-core';
+import { pgTable, serial, text, timestamp, boolean, integer } from 'drizzle-orm/pg-core';
+import { relations } from 'drizzle-orm';
 
-// // Example users table - modify according to your needs
-// export const users = pgTable('users', {
-//   id: serial('id').primaryKey(),
-//   name: varchar('name', { length: 255 }).notNull(),
-//   email: varchar('email', { length: 255 }).notNull().unique(),
-//   createdAt: timestamp('created_at').defaultNow().notNull(),
-//   updatedAt: timestamp('updated_at').defaultNow().notNull(),
-// });
+export const users = pgTable('users', {
+  id: serial('id').primaryKey(),
+  email: text('email').notNull().unique(),
+  password: text('password').notNull(), // In a real app, use hashing (e.g., bcrypt)
+  name: text('name'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});
 
-// // Example posts table - modify according to your needs
-// export const posts = pgTable('posts', {
-//   id: serial('id').primaryKey(),
-//   title: varchar('title', { length: 255 }).notNull(),
-//   content: text('content'),
-//   published: boolean('published').default(false).notNull(),
-//   authorId: integer('author_id').references(() => users.id),
-//   createdAt: timestamp('created_at').defaultNow().notNull(),
-//   updatedAt: timestamp('updated_at').defaultNow().notNull(),
-// });
+export const todos = pgTable('todos', {
+  id: serial('id').primaryKey(),
+  title: text('title').notNull(),
+  completed: boolean('completed').default(false).notNull(),
+  userId: integer('user_id').references(() => users.id).notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});
 
-// // Type exports
-// export type User = typeof users.$inferSelect;
-// export type NewUser = typeof users.$inferInsert;
-// export type Post = typeof posts.$inferSelect;
-// export type NewPost = typeof posts.$inferInsert; 
+export const usersRelations = relations(users, ({ many }) => ({
+  todos: many(todos),
+}));
+
+export const todosRelations = relations(todos, ({ one }) => ({
+  user: one(users, {
+    fields: [todos.userId],
+    references: [users.id],
+  }),
+}));
+
+export type User = typeof users.$inferSelect;
+export type NewUser = typeof users.$inferInsert;
+export type Todo = typeof todos.$inferSelect;
+export type NewTodo = typeof todos.$inferInsert;
+
